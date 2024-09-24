@@ -1,4 +1,4 @@
 
 serve:
-	pyenv exec python main.py
+	python3 main.py
 
