@@ -32,5 +32,10 @@ plus = [
 async def root():
     sense.set_pixels(plus)
 
+@app.get("/reset")
+async def reset():
+    sense.clear()
+    return fp.responses.HTMLResponse(status_code=200)
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
