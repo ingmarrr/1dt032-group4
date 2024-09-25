@@ -1,9 +1,14 @@
 import fastapi as fp
+import fastapi.staticfiles as sf
 import sense_hat as sh
 import uvicorn
 
-app     = fp.FastAPI()
+STATIC_DIR="static"
+
 sense   = sh.SenseHat()
+app     = fp.FastAPI()
+
+app.mount("/" + STATIC_DIR, sf.StaticFiles(directory=STATIC_DIR), name=STATIC_DIR)
 
 green = (0, 255, 0)
 yellow = (255, 255, 0)
@@ -16,26 +21,6 @@ pink = (255,105, 180)
 W=white
 O=nothing
 
-
-plus = [
-    O, O, O, O, O, O, O, O, 
-    O, O, O, W, W, O, O, O,
-    O, O, O, W, W, O, O, O, 
-    O, W, W, W, W, W, W, O,
-    O, W, W, W, W, W, W, O,
-    O, O, O, W, W, O, O, O,
-    O, O, O, W, W, O, O, O,
-    O, O, O, O, O, O, O, O
-]
-
-@app.get("/")
-async def root():
-    sense.set_pixels(plus)
-
-@app.get("/reset")
-async def reset():
-    sense.clear()
-    return fp.responses.HTMLResponse(status_code=200)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
