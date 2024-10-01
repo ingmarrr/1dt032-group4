@@ -8,10 +8,10 @@ async def reset():
 
 @main.app.get("/")
 async def root():
-
-    return """
-        <div class="p_title">1DT032 Project - Group 4</div>
-    """
+	return fp.responses.HTMLResponse(
+		content="""<div class="p_title">1DT032 Project - Group 4</div>""",
+		status_code=200,
+	)
 
 @main.app.post("/upload")
 async def upload(file: fp.UploadFile):
