@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>1DT032 Project - Group 4</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href={{ url_for('static', path='/css/style.css' ) }} rel="stylesheet" />
+    <!-- <link rel="stylesheet" href="../css/style.css> -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
+  </head>
+  <body class="
+    font-mono bg-gray-200 
+    flex flex-col align-center
+  " style="height: 100vh;">
+    <div id="header" class="
+      m-2 p-3
+      flex flex-row justify-center align-center
+      bg-gray-300
+    ">
+      <div class="test-xs font-bold mx-3 cursor-pointer"
+           hx-get="draw"
+           hx-target="#g4-body-target"
+           hx-swap="outerHTML"
+      >draw</div>
+      <div class="test-xs font-bold mx-3 cursor-pointer"
+           hx-get="upload"
+           hx-target="#g4-body-target"
+           hx-swap="outerHTML"
+      >upload</div>
+    </div>
+    <div id="g4-body" class="
+      mb-2 mx-2 p-3 h-full
+      bg-gray-300
+    ">
+      <div id="g4-body-target"
+        hx-get="draw"
+        hx-trigger="load delay:100ms"
+        hx-swap="outerHTML">
+      </div>
+    </div>
+  </body>
+</html>
+

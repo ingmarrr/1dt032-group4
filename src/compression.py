@@ -1,5 +1,8 @@
+import base64
 import os
 import io
+from typing import Optional
+
 from fastapi import FastAPI, File, UploadFile
 from PIL import Image, ImageEnhance, ImageFilter
 import numpy as np
@@ -129,42 +132,27 @@ def downsample_bicubic(image):
 
 
 # The main function that processes the image
-def process_image(image, method='downsample'):
-    square_image = crop_to_square(image)  # Crop the image to a square
-    enhanced_image = enhance_image(square_image)  # Enhanced images
+def process_image(image, method='downsample') -> Optional[Image.Image]:
+    cropped         = crop_to_square(image)  # Crop the image to a square
+    enhanced_image  = enhance_image(cropped)  # Enhanced images
     
     # Downsampling according to specified method
-    if method == 'downsample':
-        processed_image = downsample(enhanced_image)  # Use Gaussian downsampling
-    elif method == 'bicubic':
-        processed_image = downsample_bicubic(enhanced_image)  # Downsampling using double cubic interpolation
-    else:
-        raise ValueError("Unsupported methods, please select 'downsample'、'bicubic' 或 'laplacian'")
+    match method:
+        case "downsample"   : processed_image = downsample(enhanced_image)  # Use Gaussian downsampling
+        case "bicubic"      : processed_image = downsample_bicubic(enhanced_image)  # Downsampling using double cubic interpolation
+        case _ : return None
+
     sharpened_image = sharpen_image(processed_image)  # Sharpen the image before quantising
     quantized_image = quantize_image(sharpened_image)  # Perform colour quantification
     return quantized_image
 
-# Routing of uploaded images
-@app.post("/upload-image/")
-async def upload_image(file: UploadFile = File(...), method: str = 'downsample'):
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents))  # Getting images from the front end
-
-    # Crop the image to a square
-    image = crop_to_square(image)  # Cropped to a square
-
-    quantized_image = process_image(image, method=method)  # Processing images
-    output_image_bytes = image_to_bytes(quantized_image)  # Convert to byte stream to return
-
-    return {"processed_image": output_image_bytes}
-
 # Functions to handle local images
-def process_local_image(image_name, method='downsample'):
-    input_path = os.path.join("Image", "Input", image_name)
-    output_path = os.path.join("Image", "Output", f"processed_{method}_{image_name}")
+def process_local_image(image_name, method='downsample') -> str | None:
+    input_path      = os.path.join("Image", "Input", image_name)
+    output_path     = os.path.join("Image", "Output", f"processed_{method}_{image_name}")
 
     if not os.path.isfile(input_path):
-        return {"error": "Input image does not exist"}
+        return "input image does not exist"
 
     image = Image.open(input_path)  # Read the local image
 
@@ -173,13 +161,15 @@ def process_local_image(image_name, method='downsample'):
 
     quantized_image = process_image(image, method=method)  # Processing images
     # Save processed images
+    if quantized_image is None:
+        return "failed processing image"
+
     quantized_image.save(output_path)
 
     # Size of output image
-    print(f"Image size after cropping: {image.size}")
-    print(f"Size of processed image: {quantized_image.size}")
-
-    return {"message": f"Processing is complete and has been saved to {output_path}"}
+    print(f"[ok] image size after cropping  : {image.size}")
+    print(f"[ok] size of processed image    : {quantized_image.size}")
+    print(f"[ok] saved to                   : {output_path}")
 
 # main function
 if __name__ == "__main__":

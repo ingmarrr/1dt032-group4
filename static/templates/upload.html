@@ -1,0 +1,141 @@
+<div id="g4-body-target">
+    <div id="fileUploadComponent" class="p-4">
+      <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4">
+          <h2 class="text-xl font-semibold mb-4">PNG File Upload</h2>
+          <div id="dropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition duration-300">
+            <p>Drag & Drop PNG files here or</p>
+            <label for="fileInput" class="mt-2 inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+              Select PNG Files
+            </label>
+            <input type="file" id="fileInput" class="hidden" multiple accept=".png,image/png">
+          </div>
+          <div id="fileList" class="mt-4">
+            <h3 class="font-semibold mb-2">Selected Files:</h3>
+            <ul id="selectedFiles" class="list-disc pl-5"></ul>
+          </div>
+          <button id="uploadButton" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full">
+            Upload Files
+          </button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+    function InitUploadComponent() {
+      const dropArea    = document.getElementById('dropArea');
+      const fileInput   = document.getElementById('fileInput');
+      const fileList    = document.getElementById('selectedFiles');
+      const uploadBtn   = document.getElementById('uploadButton');
+      const target      = document.getElementById('g4-body-target')
+
+      let selectedFiles = [];
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      function highlight() {
+        dropArea.classList.add('bg-blue-100');
+      }
+
+      function unhighlight() {
+        dropArea.classList.remove('bg-blue-100');
+      }
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+      }
+
+      function isPngFile(file) {
+        return file.type === 'image/png';
+      }
+
+      function handleFiles(files) {
+        const pngFiles = Array.from(files).filter(isPngFile);
+        if (pngFiles.length !== files.length) {
+          alert('Only PNG files are allowed. Non-PNG files have been ignored.');
+        }
+        selectedFiles = [...selectedFiles, ...pngFiles];
+        updateFileList();
+      }
+
+      function updateFileList() {
+        fileList.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+          const li = document.createElement('li');
+          li.className = 'mb-2';
+          li.innerHTML = `
+            ${file.name} 
+            <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeFile(${index})">
+              Remove
+            </button>
+          `;
+          fileList.appendChild(li);
+        });
+      }
+
+      window.removeFile = function(index) {
+        selectedFiles.splice(index, 1);
+        updateFileList();
+      }
+
+      async function uploadFiles() {
+        if (selectedFiles.length === 0) {
+          alert('Please select at least one PNG file to upload.');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', selectedFiles[0], selectedFiles[0].name);
+
+        try {
+          const resp = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!resp.ok) {
+            throw new Error('Upload failed');
+          }
+
+          selectedFiles = [];
+          updateFileList();
+
+          target.innerHTML = await resp.text();
+
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Error uploading file. Please try again: ' + error);
+        }
+
+        selectedFiles = [];
+        updateFileList();
+      }
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+
+      dropArea.addEventListener('drop', handleDrop, false);
+
+      fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+      });
+
+      uploadBtn.addEventListener('click', uploadFiles);
+    }
+    InitUploadComponent()
+</script>

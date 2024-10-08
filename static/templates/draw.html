@@ -1,0 +1,150 @@
+<div id="g4-body-target">
+  <div id="drawingComponent" class="p-4">
+      <div class="max-w-md mx-auto rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+          <div class="p-4">
+              <h2 class="text-xl font-semibold mb-4">Drawing Pad</h2>
+              <canvas id="drawingCanvas" class="w-64 h-64 bg-white  border-4 border-black rounded-lg mb-4"></canvas>
+              <div class="flex justify-between items-center mb-4">
+                  <div class="flex items-center">
+                      <input type="color" id="colorPicker" class="w-12 h-8 rounded cursor-pointer mr-4" value="#000000">
+                      <div class="flex items-center">
+                          <label for="brushSize" class="mr-2">Brush Size:</label>
+                          <input type="range" id="brushSize" min="1" max="50" value="2" class="w-24">
+                          <span id="brushSizeDisplay" class="ml-2">2px</span>
+                      </div>
+                  </div>
+                  <button id="clearButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                      Clear
+                  </button>
+              </div>
+              <button id="uploadButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                  Upload Drawing
+              </button>
+          </div>
+      </div>
+  </div>
+</div>
+
+<script>
+  function InitDrawComponent() {
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    const clearButton = document.getElementById('clearButton');
+    const colorPicker = document.getElementById('colorPicker');
+    const brushSize = document.getElementById('brushSize');
+    const brushSizeDisplay = document.getElementById('brushSizeDisplay');
+    const uploadButton = document.getElementById('uploadButton');
+
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        ctx.strokeStyle = colorPicker.value;
+        ctx.lineWidth = brushSize.value;
+        ctx.lineCap = 'round';
+    }
+
+    resizeCanvas();
+    setTimeout(resizeCanvas, 100);
+    window.addEventListener('resize', resizeCanvas);
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function startDrawing(e) {
+        isDrawing = true;
+        [lastX, lastY] = getMousePos(canvas, e);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const [x, y] = getMousePos(canvas, e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        [lastX, lastY] = [x, y];
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function updateColor() {
+        ctx.strokeStyle = colorPicker.value;
+    }
+
+    function updateBrushSize() {
+        ctx.lineWidth = brushSize.value;
+        brushSizeDisplay.textContent = `${brushSize.value}px`;
+    }
+
+    function getMousePos(canvas, evt) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return [
+            (evt.clientX - rect.left) * scaleX,
+            (evt.clientY - rect.top) * scaleY
+        ];
+    }
+
+    function uploadDrawing() {
+        // Convert canvas to blob
+        canvas.toBlob(function(blob) {
+            // Create FormData and append the blob
+            const formData = new FormData();
+            formData.append('image', blob, 'drawing.png');
+
+            // Send the image to the server
+            fetch('/upload-and-display', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                alert('Drawing uploaded successfully!');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error uploading drawing. Please try again.');
+            });
+        }, 'image/png');
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    clearButton.addEventListener('click', clearCanvas);
+    colorPicker.addEventListener('input', updateColor);
+    brushSize.addEventListener('input', updateBrushSize);
+    uploadButton.addEventListener('click', uploadDrawing);
+
+    // Touch support
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        startDrawing(touch);
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        draw(touch);
+    });
+
+    canvas.addEventListener('touchend', stopDrawing);
+
+    // Initialize brush size display
+    updateBrushSize();
+  }
+  InitDrawComponent()
+</script>
