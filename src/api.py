@@ -6,7 +6,7 @@ import fastapi as fp
 import fastapi.responses as res
 import PIL.Image as img
 
-import _main as main
+import main as main
 
 import src.compression as cp
 import src.draw as draw
@@ -71,7 +71,6 @@ async def p_upload(file: fp.UploadFile):
     except Exception as e:
         print(str(e))
         raise fp.HTTPException(status_code=500, detail=str(e))
-
 
 @main.app.get("/error")
 async def error(req: fp.Request, msg: str):

@@ -99,10 +99,10 @@
         canvas.toBlob(function(blob) {
             // Create FormData and append the blob
             const formData = new FormData();
-            formData.append('image', blob, 'drawing.png');
+            formData.append('file', blob, 'drawing.png');
 
             // Send the image to the server
-            fetch('/upload-and-display', {
+            fetch('/upload', {
                 method: 'POST',
                 body: formData
             })

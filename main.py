@@ -6,12 +6,8 @@ import uvicorn
 
 from pathlib import Path
 
-STATIC_DIR="static"
-
 sense   = sh.SenseHat()
 app     = fp.FastAPI()
-
-app.mount("/" + STATIC_DIR, sf.StaticFiles(directory=STATIC_DIR), name=STATIC_DIR)
 
 base_dir = Path(__file__).resolve().parent
 app.mount(
@@ -23,4 +19,5 @@ app.mount(
 templ = Jinja2Templates(directory="./static/templates")
 
 if __name__ == "__main__":
+    import src.api
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
